@@ -143,15 +143,26 @@ still loads (menus/how-to-play), but hosting/joining a game can't connect.
 > GitHub Pages can only host the static client — it cannot run the Colyseus
 > server.
 
-### Server → Render / Railway / Fly (Node host)
+### Server → Render (automated via `render.yaml`)
 
-Deploy the `server/` package to any Node host that supports WebSockets and TLS:
+A [Render Blueprint](./render.yaml) is included, so the server is one apply:
 
-- Build/start command: `npm start` (runs `tsx src/index.ts`).
-- The host provides `PORT`; the server reads `process.env.PORT` (defaults 2567).
-- Use the host's public `https`/`wss` URL as `VITE_SERVER_URL` for the client.
+1. On **render.com → New → Blueprint**, connect this repo and **Apply**.
+   Render reads `render.yaml` and creates a `starcallers-server` web service
+   (rootDir `server/`, build `npm install`, start `npm start`, health check
+   `/health`).
+2. When it's live you'll get a URL like
+   `https://starcallers-server.onrender.com`.
+3. Put its **`wss://`** form into the client's `VITE_SERVER_URL` Pages variable:
+   `wss://starcallers-server.onrender.com`, then re-run the Pages workflow.
 
-(For a quick family test without deploying the server, run it locally and expose
+Render provides `PORT`, WebSockets, and TLS automatically. The **free plan
+sleeps after ~15 min idle** and cold-starts on the next request (first
+connection takes a few seconds) — fine for family games; use a paid plan for
+always-on. Any other Node host (Railway/Fly) works too with the same
+build/start commands.
+
+(For a quick test without deploying the server, run it locally and expose
 `:2567` with a Cloudflare Tunnel — see "Playing on phones" above.)
 
 ## Next steps (post-v1)

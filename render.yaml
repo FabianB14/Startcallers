@@ -1,0 +1,32 @@
+# Render blueprint for the Starcallers authoritative Colyseus server.
+#
+# Deploy:
+#   1. Push this repo to GitHub.
+#   2. On render.com: New → Blueprint → connect this repo → Apply.
+#      Render reads this file and creates the web service below.
+#   3. After it goes live you'll get a URL like
+#         https://starcallers-server.onrender.com
+#      Use its wss:// form as the client's VITE_SERVER_URL (GitHub Pages var):
+#         wss://starcallers-server.onrender.com
+#
+# Notes:
+#   - rootDir points commands at server/, but the whole repo is checked out so
+#     the imports into ../shared still resolve at runtime.
+#   - Render injects PORT; the server reads process.env.PORT.
+#   - WebSockets + TLS are provided automatically on the onrender.com domain.
+#   - The free plan sleeps after ~15 min idle and cold-starts on the next
+#     request (first connection takes a few seconds). Bump to a paid plan for
+#     always-on.
+services:
+  - type: web
+    name: starcallers-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
