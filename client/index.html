@@ -17,12 +17,14 @@
         overflow: hidden;
         font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
       }
+      /* Fill the viewport and let Phaser's CENTER_BOTH handle centering.
+         (A flexbox here double-centers and can shift the canvas off-axis.) */
       #game {
         position: fixed;
         inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
       }
       canvas {
         display: block;

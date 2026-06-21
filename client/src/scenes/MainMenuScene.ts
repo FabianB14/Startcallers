@@ -1,14 +1,11 @@
 import Phaser from "phaser";
 import { COLORS, FONT, makeButton, makeStarfield, toast } from "../ui/theme";
+import { TextInput } from "../ui/TextInput";
 import { net } from "../net/NetClient";
 
-const INPUT_STYLE =
-  "width:260px;padding:12px;border-radius:8px;border:2px solid #4a3fa0;" +
-  "background:#10142b;color:#e8e9ff;font-size:18px;font-family:inherit;text-align:center;outline:none;";
-
 export class MainMenuScene extends Phaser.Scene {
-  private nameInput!: HTMLInputElement;
-  private codeInput?: HTMLInputElement;
+  private nameInput!: TextInput;
+  private codeInput?: TextInput;
   private busy = false;
 
   constructor() {
@@ -21,11 +18,7 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Title
     const title = this.add
-      .text(width / 2, 150, "STARCALLERS", {
-        fontFamily: FONT,
-        fontSize: "72px",
-        color: COLORS.text,
-      })
+      .text(width / 2, 150, "STARCALLERS", { fontFamily: FONT, fontSize: "72px", color: COLORS.text })
       .setOrigin(0.5);
     title.setShadow(0, 0, "#8a7bff", 24, true, true);
     this.tweens.add({ targets: title, y: 158, duration: 2400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
@@ -38,20 +31,17 @@ export class MainMenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Name field
+    // Name field (canvas-rendered — click to focus, type, Enter to host)
     this.add
-      .text(width / 2, 290, "STARCALLER NAME", {
-        fontFamily: FONT,
-        fontSize: "14px",
-        color: COLORS.textDim,
-      })
+      .text(width / 2, 290, "STARCALLER NAME", { fontFamily: FONT, fontSize: "14px", color: COLORS.textDim })
       .setOrigin(0.5);
-    const nameDom = this.add.dom(width / 2, 326).createFromHTML(
-      `<input type="text" maxlength="16" style="${INPUT_STYLE}" />`,
-    );
-    this.nameInput = nameDom.node.querySelector("input") as HTMLInputElement;
-    this.nameInput.value = net.playerName;
-    this.nameInput.placeholder = "Star";
+    this.nameInput = new TextInput(this, width / 2, 326, net.playerName, {
+      width: 280,
+      placeholder: "Star",
+      maxLength: 16,
+      onEnter: () => this.host(),
+    });
+    this.nameInput.focus(); // ready to type immediately
 
     // Buttons
     makeButton(this, width / 2, 420, "▶  HOST GAME", () => this.host(), { width: 300, fontSize: 24 });
@@ -68,7 +58,7 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private saveName(): void {
-    net.setName(this.nameInput.value.trim() || "Star");
+    net.setName(this.nameInput.getValue().trim() || "Star");
   }
 
   private async host(): Promise<void> {
@@ -91,20 +81,22 @@ export class MainMenuScene extends Phaser.Scene {
       return;
     }
     const { width } = this.scale;
-    const dom = this.add.dom(width / 2, 484).createFromHTML(
-      `<input type="text" maxlength="4" placeholder="CODE" style="${INPUT_STYLE};text-transform:uppercase;width:160px;letter-spacing:8px;" />`,
-    );
-    this.codeInput = dom.node.querySelector("input") as HTMLInputElement;
+    this.codeInput = new TextInput(this, width / 2, 484, "", {
+      width: 200,
+      placeholder: "CODE",
+      maxLength: 4,
+      uppercase: true,
+      fontSize: 26,
+      filter: (ch) => /[A-Z]/.test(ch),
+      onEnter: () => this.connect(),
+    });
     this.codeInput.focus();
     makeButton(this, width / 2, 548, "CONNECT", () => this.connect(), { width: 300, color: COLORS.accent });
-    this.codeInput.addEventListener("keydown", (ev) => {
-      if ((ev as KeyboardEvent).key === "Enter") this.connect();
-    });
   }
 
   private async connect(): Promise<void> {
     if (this.busy || !this.codeInput) return;
-    const code = this.codeInput.value.trim().toUpperCase();
+    const code = this.codeInput.getValue().trim().toUpperCase();
     if (code.length < 4) {
       toast(this, "Enter a 4-letter room code");
       return;
