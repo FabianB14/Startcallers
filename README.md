@@ -116,9 +116,45 @@ All balance numbers live in `shared/` — `zodiac.ts` (player kits),
 `enemies.ts` (enemy stats), and `constants.ts` (arena, alignment, waves). Edit
 in one place; both client and server read from it.
 
+## Deploying
+
+The client and server deploy **separately**: the client is a static site, the
+server is a long-running Node process.
+
+### Client → GitHub Pages (automated)
+
+`.github/workflows/deploy-pages.yml` builds the client and publishes it to
+GitHub Pages.
+
+1. **Enable Pages:** repo **Settings → Pages → Build and deployment → Source:
+   GitHub Actions**.
+2. **Point at your server:** repo **Settings → Secrets and variables → Actions →
+   Variables**, add a variable `VITE_SERVER_URL` with value
+   `wss://your-server.example.com`. Because Pages is served over HTTPS, the
+   server must be reachable over **`wss://`** (TLS) — a plain `ws://` endpoint
+   is blocked as mixed content.
+3. **Deploy:** push to `main`, or run the workflow manually from the **Actions**
+   tab (`workflow_dispatch`) to deploy any branch.
+
+The workflow sets the Vite `base` path to `/<repo>/` automatically, so the site
+works at `https://<user>.github.io/<repo>/`. Without `VITE_SERVER_URL` the site
+still loads (menus/how-to-play), but hosting/joining a game can't connect.
+
+> GitHub Pages can only host the static client — it cannot run the Colyseus
+> server.
+
+### Server → Render / Railway / Fly (Node host)
+
+Deploy the `server/` package to any Node host that supports WebSockets and TLS:
+
+- Build/start command: `npm start` (runs `tsx src/index.ts`).
+- The host provides `PORT`; the server reads `process.env.PORT` (defaults 2567).
+- Use the host's public `https`/`wss` URL as `VITE_SERVER_URL` for the client.
+
+(For a quick family test without deploying the server, run it locally and expose
+`:2567` with a Cloudflare Tunnel — see "Playing on phones" above.)
+
 ## Next steps (post-v1)
 
 - Expand to the full 12-sign roster (metadata already present in `zodiac.ts`).
 - Per-element super polish, audio, richer particles/bloom.
-- Deploy: server on Render/Railway, client on Netlify/Vercel (set
-  `VITE_SERVER_URL` to the deployed server).
