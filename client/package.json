@@ -1,0 +1,20 @@
+{
+  "name": "starcallers-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Starcallers — top-down co-op Zodiac arena game (Phaser 3 client)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "colyseus.js": "^0.15.28",
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  }
+}
