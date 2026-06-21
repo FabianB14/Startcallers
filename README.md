@@ -116,9 +116,56 @@ All balance numbers live in `shared/` — `zodiac.ts` (player kits),
 `enemies.ts` (enemy stats), and `constants.ts` (arena, alignment, waves). Edit
 in one place; both client and server read from it.
 
+## Deploying
+
+The client and server deploy **separately**: the client is a static site, the
+server is a long-running Node process.
+
+### Client → GitHub Pages (automated)
+
+`.github/workflows/deploy-pages.yml` builds the client and publishes it to
+GitHub Pages.
+
+1. **Enable Pages:** repo **Settings → Pages → Build and deployment → Source:
+   GitHub Actions**.
+2. **Point at your server:** repo **Settings → Secrets and variables → Actions →
+   Variables**, add a variable `VITE_SERVER_URL` with value
+   `wss://your-server.example.com`. Because Pages is served over HTTPS, the
+   server must be reachable over **`wss://`** (TLS) — a plain `ws://` endpoint
+   is blocked as mixed content.
+3. **Deploy:** push to `main`, or run the workflow manually from the **Actions**
+   tab (`workflow_dispatch`) to deploy any branch.
+
+The workflow sets the Vite `base` path to `/<repo>/` automatically, so the site
+works at `https://<user>.github.io/<repo>/`. Without `VITE_SERVER_URL` the site
+still loads (menus/how-to-play), but hosting/joining a game can't connect.
+
+> GitHub Pages can only host the static client — it cannot run the Colyseus
+> server.
+
+### Server → Render (automated via `render.yaml`)
+
+A [Render Blueprint](./render.yaml) is included, so the server is one apply:
+
+1. On **render.com → New → Blueprint**, connect this repo and **Apply**.
+   Render reads `render.yaml` and creates a `starcallers-server` web service
+   (rootDir `server/`, build `npm install`, start `npm start`, health check
+   `/health`).
+2. When it's live you'll get a URL like
+   `https://starcallers-server.onrender.com`.
+3. Put its **`wss://`** form into the client's `VITE_SERVER_URL` Pages variable:
+   `wss://starcallers-server.onrender.com`, then re-run the Pages workflow.
+
+Render provides `PORT`, WebSockets, and TLS automatically. The **free plan
+sleeps after ~15 min idle** and cold-starts on the next request (first
+connection takes a few seconds) — fine for family games; use a paid plan for
+always-on. Any other Node host (Railway/Fly) works too with the same
+build/start commands.
+
+(For a quick test without deploying the server, run it locally and expose
+`:2567` with a Cloudflare Tunnel — see "Playing on phones" above.)
+
 ## Next steps (post-v1)
 
 - Expand to the full 12-sign roster (metadata already present in `zodiac.ts`).
 - Per-element super polish, audio, richer particles/bloom.
-- Deploy: server on Render/Railway, client on Netlify/Vercel (set
-  `VITE_SERVER_URL` to the deployed server).

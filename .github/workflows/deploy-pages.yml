@@ -1,0 +1,72 @@
+name: Deploy client to GitHub Pages
+
+# Builds the Vite + Phaser client and publishes it to GitHub Pages.
+#
+# NOTE: GitHub Pages only hosts the static client. The authoritative Colyseus
+# server must run on a Node host (Render/Railway/Fly) over TLS, and you must
+# point the client at it by setting a repository variable:
+#   Settings → Secrets and variables → Actions → Variables → New variable
+#   Name:  VITE_SERVER_URL
+#   Value: wss://your-server.example.com      (wss:// is required from an HTTPS page)
+# Without it the site still loads, but hosting/joining a game can't connect.
+#
+# One-time setup: Settings → Pages → Build and deployment → Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {} # lets you deploy any branch manually from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent Pages deployment; cancel older in-progress runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        env:
+          # Project pages serve from /<repo>/ — derive base from the repo name.
+          VITE_BASE: /${{ github.event.repository.name }}/
+          # Configure the deployed server endpoint via a repo variable (see header).
+          VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL }}
+        run: |
+          npm run build
+          touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: client/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
