@@ -63,6 +63,9 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   update(): void {
+    // While the ZodiacSelect overlay is open, suspend Lobby input so clicks
+    // don't bleed through to the buttons underneath it.
+    this.input.enabled = !this.scene.isActive("ZodiacSelect");
     this.renderRoster();
     // If a host elsewhere started, or phase moved on, react.
     if (net.phase === "playing") this.scene.start("Game");
